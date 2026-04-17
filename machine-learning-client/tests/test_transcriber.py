@@ -204,7 +204,7 @@ class TestExtractWordsPerMinute:
 
     def test_negative_duration_returns_zero(self):
         """
-        test that segment with negative duration returns 0wpm (really weird edge case that idt will happen?)
+        test that segment with negative duration returns 0wpm
         """
         segments = [{"start": 10.0, "end": 5.0, "text": "hello"}]
         assert extract_words_per_minute(segments) == 0.0
