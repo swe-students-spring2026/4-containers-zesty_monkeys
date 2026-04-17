@@ -95,4 +95,5 @@ def extract_words_per_minute(segments: list) -> float:
     duration_minutes = duration_seconds / 60.0
     return round(total_words / duration_minutes, 2)
 
-# perhaps another function that gives qualitative value to pauses / splitting of a sentence with segments
+# perhaps another function that gives qualitative value to pauses / splitting of a sentence with
+# segments
