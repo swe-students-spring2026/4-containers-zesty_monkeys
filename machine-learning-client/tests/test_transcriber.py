@@ -1,6 +1,7 @@
 """
 Tests for transcriber.py.
 """
+
 from unittest.mock import MagicMock, patch
 import pytest
 from app.transcriber import (
@@ -12,10 +13,12 @@ from app.transcriber import (
 
 # load_model
 
+
 class TestLoadModel:
     """
     tests for load_model() function
     """
+
     @patch("app.transcriber.whisper.load_model")
     def test_valid_model_sizes_are_accepted(self, mock_load):
         """
@@ -50,12 +53,15 @@ class TestLoadModel:
         load_model()
         mock_load.assert_called_with("base")
 
+
 # validate_audio_file
+
 
 class TestValidateAudioFile:
     """
     tests for validate_audio_file() function
     """
+
     @pytest.mark.parametrize("ext", [".wav", ".mp3", ".m4a"])
     def test_valid_extensions_return_true(self, tmp_path, ext):
         """
@@ -89,12 +95,15 @@ class TestValidateAudioFile:
         audio.write_bytes(b"audio data placeholder")
         assert validate_audio_file(str(audio)) is True
 
+
 # transcribe_audio
+
 
 class TestTranscribeAudio:
     """
     tests for transcribe_audio() function
     """
+
     def _make_model(self, transcribe_return: dict) -> MagicMock:
         model = MagicMock()
         model.transcribe.return_value = transcribe_return
@@ -105,11 +114,13 @@ class TestTranscribeAudio:
         """
         test that you get text, segments, and language in return from transcription
         """
-        model = self._make_model({
-            "text": "  Hello world  ",
-            "segments": [{"start": 0, "end": 5, "text": "Hello world"}],
-            "language": "en",
-        })
+        model = self._make_model(
+            {
+                "text": "  Hello world  ",
+                "segments": [{"start": 0, "end": 5, "text": "Hello world"}],
+                "language": "en",
+            }
+        )
         result = transcribe_audio(model, "fake.mp3")
         assert set(result.keys()) == {"text", "segments", "language"}
 
@@ -118,7 +129,9 @@ class TestTranscribeAudio:
         """
         test that text is stripped of whitespace
         """
-        model = self._make_model({"text": "  Hello  ", "segments": [], "language": "en"})
+        model = self._make_model(
+            {"text": "  Hello  ", "segments": [], "language": "en"}
+        )
         result = transcribe_audio(model, "fake.mp3")
         assert result["text"] == "Hello"
 
@@ -144,7 +157,10 @@ class TestTranscribeAudio:
         assert result["segments"] == []
         assert result["language"] == "unknown"
 
-    @patch("app.transcriber.validate_audio_file", side_effect=FileNotFoundError("not found"))
+    @patch(
+        "app.transcriber.validate_audio_file",
+        side_effect=FileNotFoundError("not found"),
+    )
     def test_propagates_file_not_found(self, _mock_validate):
         """
         test that filenotfound error propagates if the audio file does not exist
@@ -183,12 +199,15 @@ class TestTranscribeAudio:
         _, kwargs = model.transcribe.call_args
         assert kwargs["initial_prompt"] == "Custom prompt"
 
+
 # extract_words_per_minute
+
 
 class TestExtractWordsPerMinute:
     """
     tests for extract_words_per_minute() function
     """
+
     def test_empty_segments_returns_zero(self):
         """
         test that empty segment returns 0wpm
@@ -230,7 +249,7 @@ class TestExtractWordsPerMinute:
         test wpm calculations with multiple segments
         """
         segments = [
-            {"start": 0.0,  "end": 30.0, "text": "one two three"},
+            {"start": 0.0, "end": 30.0, "text": "one two three"},
             {"start": 30.0, "end": 60.0, "text": "four five six"},
         ]
         assert extract_words_per_minute(segments) == 6.0
