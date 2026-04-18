@@ -6,8 +6,16 @@ name = "pypi"
 [packages]
 pylint = "*"
 black = "*"
+pymongo = "*"
+requests = "*"
+flask = "*"
+flask-login = "*"
 
 [dev-packages]
+pytest = "*"
+pytest-flask = "*"
+black = "*"
+pylint = "*"
 
 [requires]
 python_version = "3.10"
