@@ -32,11 +32,12 @@ def upload_audio():
     return (
         jsonify(
             {
-                "transcript": transcript,  # maybe more fields later. talk with frontend and ml-client.
+                "transcript": transcript,
             }
         ),
         200,
     )
+    # maybe more fields later. talk with frontend and ml-client.
 
 
 @main.route("/dashboard", methods=["GET"])
