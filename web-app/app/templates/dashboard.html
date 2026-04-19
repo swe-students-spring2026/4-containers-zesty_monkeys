@@ -27,13 +27,13 @@
 </div>
 <div id="resultCard" hidden>
     <h3>Transcript</h3>
-    <p id="resultText"></p>
+    <div id="resultText" style="line-height: 1.6;"></div>
     <div id="analysisResult"></div>
 </div>
-<div>
-    <h2>Past Recordings</h2>
-    <div id="historyList"></div>
+<div class="container" style="margin-top: 2rem;">
+    <p style="margin-top: 1rem; color: #555;">Your recordings and analysis results will appear here.</p>
 </div>
+
 <script>
 let mediaRecorder = null;
 let audioChunks = [];
@@ -47,8 +47,17 @@ const timerEl = document.getElementById('timer');
 const statusEl = document.getElementById('status');
 const resultCard = document.getElementById('resultCard');
 const resultText = document.getElementById('resultText');
-const audioPlayer = document.getElementById('audioPlayer');
-const analysisResult = document.getElementById('analysisResult');
+
+function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/[&<>'"]/g, tag => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        "'": '&#39;',
+        '"': '&quot;'
+    }[tag]));
+}
 
 function formatTime(s) {
     const m = String(Math.floor(s / 60)).padStart(2, '0');
@@ -142,11 +151,10 @@ submitBtn.onclick = async () => {
         if (!res.ok) {
             setStatus(data.error || 'Error');
         } else {
-            resultText.textContent = data.transcript;
+            resultText.innerHTML = highlightTranscript(data.transcript, data.analysis?.grammar_errors);
             renderAnalysis(analysisResult, data.analysis);
             resultCard.hidden = false;
             setStatus('Done.');
-            setTimeout(loadHistory, 500);
         }
     } catch {
         setStatus('Server error.');
@@ -170,12 +178,33 @@ function renderOverusedWords(words) {
     return `<p><strong>Overused words:</strong></p><ul>${items}</ul>`;
 }
 
-function renderGrammarErrors(errors) {
-    if (!errors || errors.length === 0) return '<p><strong>Grammar:</strong> No issues found.</p>';
-    const items = errors.slice(0, 5).map(e =>
-        `<li>${e.message}${e.replacements.length ? ` — try: ${e.replacements.join(', ')}` : ''}</li>`
-    ).join('');
-    return `<p><strong>Grammar (${errors.length} issue${errors.length !== 1 ? 's' : ''}):</strong></p><ul>${items}</ul>`;
+function highlightTranscript(transcript, errors) {
+    if (!transcript) return '';
+    if (!errors || errors.length === 0) return escapeHtml(transcript);
+
+    const sortedErrors = [...errors].sort((a, b) => b.offset - a.offset);
+    
+    let htmlTranscript = transcript;
+
+    for (const e of sortedErrors) {
+        const offset = e.offset;
+        const length = e.length;
+
+        const before = htmlTranscript.substring(0, offset);
+        const errorText = htmlTranscript.substring(offset, offset + length);
+        const after = htmlTranscript.substring(offset + length);
+
+        const suggestionText = e.replacements && e.replacements.length
+            ? ` — try: ${e.replacements.join(', ')}`
+            : '';
+        const tooltipContent = `${e.message}${suggestionText}`;
+
+        const highlighted = `<span class="grammar-error" data-tooltip="${escapeHtml(tooltipContent)}">${escapeHtml(errorText)}</span>`;
+
+        htmlTranscript = before + highlighted + after;
+    }
+
+    return htmlTranscript;
 }
 
 function renderAnalysis(container, analysis) {
@@ -186,7 +215,6 @@ function renderAnalysis(container, analysis) {
         <p><strong>Sentence length:</strong> ${analysis.sentence_length_rating ?? '—'}</p>
         <p><strong>Clause length:</strong> ${analysis.clause_length_rating ?? '—'}</p>
         ${renderOverusedWords(analysis.overused_words)}
-        ${renderGrammarErrors(analysis.grammar_errors)}
     `;
 }
 
@@ -212,6 +240,8 @@ async function loadHistory() {
 
             const analysisDiv = document.createElement('div');
 
+            const transcriptHtml = highlightTranscript(entry.transcript, entry.analysis?.grammar_errors);
+
             card.innerHTML = `
                 <hr>
                 <p><strong>${date}</strong> — ${entry.language ?? ''}</p>
@@ -220,7 +250,7 @@ async function loadHistory() {
                     : '<p><em>No audio available.</em></p>'}
                 <details>
                     <summary>Transcript</summary>
-                    <p>${entry.transcript ?? ''}</p>
+                    <p style="line-height: 1.6;">${transcriptHtml}</p>
                 </details>
             `;
 
