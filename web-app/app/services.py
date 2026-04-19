@@ -1,10 +1,10 @@
 """
 Handles communication with the speech-to-text, text analysis, and LLM services.
-
-Currently uses a stub implementation.
 """
 
 import os
+import uuid
+from datetime import datetime, timezone
 import requests
 from bson import ObjectId
 from flask_login import UserMixin, current_user
@@ -12,7 +12,8 @@ from pymongo import MongoClient
 from pymongo.errors import PyMongoError
 
 # We will replace this with the actual ML service URL once it's implemented
-ML_URL = os.environ.get("MLURL", "http://url-placeholder")
+ML_URL = os.environ.get("MLURL", "http://machine-learning-client:5001")
+AUDIO_DIR = os.environ.get("AUDIO_DIR", "app/static/audio")
 
 
 def transcribe_audio(file):
@@ -27,28 +28,30 @@ def transcribe_audio(file):
     Returns:
         str: Transcribed text
     """
+    os.makedirs(AUDIO_DIR, exist_ok=True)
+    filename = f"{uuid.uuid4().hex}.webm"
+    audio_path = os.path.join(AUDIO_DIR, filename)
+    file.save(audio_path)
+
     url = f"{ML_URL}/transcribe"
     print(url)
 
-    files = {"file": (file.filename, file.stream, file.mimetype)}
-    # represents: (filename, (actual) file_object, content_type (like wav/mp3))
-
     try:
-        response = requests.post(url, files=files, timeout=300)
+        with open(audio_path, "rb") as audio_file:
+            files = {"file": (filename, audio_file, "audio/webm")}
+            response = requests.post(url, files=files, timeout=300)
     except requests.exceptions.RequestException as e:
         raise requests.exceptions.RequestException(
             f"Failed to connect to ML service: {e}"
         )
 
     data = response.json()
+    data["audio_path"] = filename
+    data["recorded_at"] = datetime.now(timezone.utc).isoformat()
+
     add_entry(data)
 
-    return data.get("transcript", "")
-    # return {
-    #     "transcript": data.get("transcript"),
-    #     "segments": data.get("segments"),
-    #     "language": data.get("language"),
-    # }
+    return data
 
 
 # def analyze_text(transcript):
@@ -155,6 +158,7 @@ def add_entry(data):
     entries = db.users.find_one({"username": current_user.username})["entries"]
     db.entries.update_one({"_id": entries}, {"$push": {"entries": data}})
 
+
 async def get_data():
     """
     Get all past user data
@@ -165,3 +169,18 @@ async def get_data():
     entries = db.users.find_one({"username": current_user.username})["entries"]
     print(entries)
     return db.entries.find_one({"_id": entries})["entries"]
+
+
+def get_entries():
+    """
+    Get user entries
+    """
+    db = get_db()
+    if not current_user.is_authenticated:
+        return []
+    entries = db.users.find_one({"username": current_user.username})["entries"]
+    doc = db.entries.find_one({"_id": entries})
+    if not doc:
+        return []
+    entries = doc.get("entries", [])
+    return list(reversed(entries))
