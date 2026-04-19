@@ -110,10 +110,10 @@ def upload_audio():
     # maybe more fields later. talk with frontend and ml-client.
 
 
-@main.route("/dashboard", methods=["GET"])
+@main.route("/", methods=["GET"])
 @login_required
 def dashboard():
     """
     Retrieves stored speech analysis records.
     """
-    return jsonify({"message": "Placeholder!!!"}), 200
+    return render_template("dashboard.html")

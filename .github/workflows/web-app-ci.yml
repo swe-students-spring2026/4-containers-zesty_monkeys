@@ -1,0 +1,47 @@
+name: Web App CI
+
+on:
+  pull_request:
+    paths:
+      - "web-app/**"
+
+env:
+  PYTHON_VERSION: "3.10"
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: "pipenv"
+
+      - name: Install dependencies
+        if: ${{ hashFiles('web-app/**/*.py') != '' }}
+        run: |
+          cd web-app
+          python -m pip install --upgrade pip
+          python -m pip install pipenv
+          pipenv sync --dev --python $(which python)
+
+      - name: Lint with pylint
+        if: ${{ hashFiles('web-app/**/*.py') != '' }}
+        run: |
+          cd web-app
+          pipenv run pylint $(git ls-files '*.py')
+
+      - name: Format with black
+        if: ${{ hashFiles('web-app/**/*.py') != '' }}
+        run: |
+          cd web-app
+          pipenv run black --diff --check .
+
+      - name: Run tests
+        if: ${{ hashFiles('web-app/**/*.py') != '' }}
+        run: |
+          cd web-app
+          FLASK_ENV=testing pipenv run python -m pytest tests/

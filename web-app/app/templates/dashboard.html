@@ -4,14 +4,147 @@
  
 {% block nav %}
 <nav>
-    <span>Presentation Analyzer</span>
     <a href="{{ url_for('main.logout') }}">Log out</a>
 </nav>
 {% endblock %}
  
 {% block content %}
 <div class="container" style="margin-top: 2rem;">
-    <h1>Welcome, {{ username }}!</h1>
+    <h1>Presentation Analyzer</h1>
+    <h2>Welcome, {{ current_user.username }}!</h2>
+</div>
+<div class="recorder-card">
+    <div id="timer">00:00</div>
+
+    <div>
+        <button id="recordBtn">Start Recording</button>
+        <button id="submitBtn" disabled>Analyze</button>
+    </div>
+
+    <div id="status"></div>
+
+    <audio id="audioPlayer" controls hidden></audio>
+</div>
+<div id="resultCard" hidden>
+    <h3>Transcript</h3>
+    <pre id="resultText"></pre>
+</div>
+<div class="container" style="margin-top: 2rem;">
     <p style="margin-top: 1rem; color: #555;">Your recordings and analysis results will appear here.</p>
 </div>
+<script>
+let mediaRecorder = null;
+let audioChunks = [];
+let audioBlob = null;
+let timerInterval = null;
+let seconds = 0;
+
+const recordBtn = document.getElementById('recordBtn');
+const submitBtn = document.getElementById('submitBtn');
+const timerEl = document.getElementById('timer');
+const statusEl = document.getElementById('status');
+const resultCard = document.getElementById('resultCard');
+const resultText = document.getElementById('resultText');
+
+function formatTime(s) {
+    const m = String(Math.floor(s / 60)).padStart(2, '0');
+    const sec = String(s % 60).padStart(2, '0');
+    return `${m}:${sec}`;
+}
+
+function setStatus(msg) {
+    statusEl.textContent = msg;
+}
+
+async function startRecording() {
+    try {
+        audioPlayer.hidden = true;
+        audioPlayer.src = '';
+
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+        mediaRecorder = new MediaRecorder(stream);
+        audioChunks = [];
+
+        mediaRecorder.ondataavailable = e => {
+            if (e.data.size > 0) audioChunks.push(e.data);
+        };
+
+        mediaRecorder.onstop = () => {
+            audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+
+            const audioURL = URL.createObjectURL(audioBlob);
+            audioPlayer.src = audioURL;
+            audioPlayer.hidden = false;
+
+            submitBtn.disabled = false;
+            setStatus('Recording ready.');
+        };
+
+        mediaRecorder.start();
+
+        recordBtn.textContent = 'Stop Recording';
+        submitBtn.disabled = true;
+
+        seconds = 0;
+        timerEl.textContent = formatTime(0);
+
+        timerInterval = setInterval(() => {
+            seconds++;
+            timerEl.textContent = formatTime(seconds);
+        }, 1000);
+
+        setStatus('Recording...');
+
+    } catch {
+        setStatus('Microphone access denied.');
+    }
+}
+
+function stopRecording() {
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+        mediaRecorder.stream.getTracks().forEach(t => t.stop());
+    }
+
+    clearInterval(timerInterval);
+    recordBtn.textContent = 'Start Recording';
+}
+
+recordBtn.onclick = () => {
+    if (!mediaRecorder || mediaRecorder.state === 'inactive') {
+        startRecording();
+    } else {
+        stopRecording();
+    }
+};
+
+submitBtn.onclick = async () => {
+    if (!audioBlob) return;
+
+    submitBtn.disabled = true;
+    setStatus('Uploading...');
+    resultCard.hidden = true;
+
+    const formData = new FormData();
+    formData.append('audio', audioBlob, 'audio.webm');
+
+    try {
+        const res = await fetch('/upload', { method: 'POST', body: formData });
+        const data = await res.json();
+
+        if (!res.ok) {
+            setStatus(data.error || 'Error');
+        } else {
+            resultText.textContent = data.transcript;
+            resultCard.hidden = false;
+            setStatus('Done.');
+        }
+    } catch {
+        setStatus('Server error.');
+    } finally {
+        submitBtn.disabled = false;
+    }
+};
+</script>
 {% endblock %}
