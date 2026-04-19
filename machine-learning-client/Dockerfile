@@ -13,6 +13,9 @@ RUN pip install pipenv && pipenv install --system --deploy
 #Audio file dependencies
 RUN apt-get update && apt-get install -y ffmpeg
 
+# Java for language_tool_python
+RUN apt-get install -y default-jre && rm -rf /var/lib/apt/lists/*
+
 #Uninstall CUDA from Whisper install
 RUN pip uninstall -y torch torchvision torchaudio
 
