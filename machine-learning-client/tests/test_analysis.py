@@ -288,3 +288,84 @@ class TestWordFrequency:
         """
         result = analysis.word_frequency("hello world", threshold=5, phrase_lengths=[])
         assert result["overused_words"] == []
+
+
+BASE_ERROR_SPEECH = (
+    "Good morning everyones!"
+    "I is very happy to be here today and speaked to all of you wonderful peoples."
+    "You know, life are full of challenges. "
+    "Many of us, we has faced difficult times — "
+    "times where we doesn't know what to do or where to go."
+    "But I wants to tell you something important: never give up on you're dreams!"
+    "When I was a young boy, my mother always telled me, 'Son, work hardly and you will succeed.'"
+    "And I thinked about them words every single day."
+    "She were the most wisest person I ever knowed."
+)
+
+
+class TestCorrectGrammarErrors:
+    """
+    Test class for function correct_grammar_errors.
+    The tests in this class are mainly things like return types,
+    due to the complexity and uncertainty of the NLP model's actual output.
+    """
+
+    def test_returns_list(self):
+        """
+        correct_grammar_errors should always return a list.
+        """
+        result = analysis.correct_grammar_errors(BASE_ERROR_SPEECH)
+        assert isinstance(result, list)
+
+    def test_returns_list_of_grammar_error_instances(self):
+        """
+        Every item in the returned list should be a GrammarErrorInstance.
+        """
+        result = analysis.correct_grammar_errors(BASE_ERROR_SPEECH)
+        assert len(result) > 0, "Expected at least one error to be detected"
+        for item in result:
+            assert isinstance(item, analysis.GrammarErrorInstance)
+
+    def test_grammar_error_instance_fields_are_correct_types(self):
+        """
+        Each GrammarErrorInstance should have fields of the expected types.
+        """
+        result = analysis.correct_grammar_errors(BASE_ERROR_SPEECH)
+        assert len(result) > 0, "Expected at least one error to be detected"
+        for item in result:
+            assert isinstance(item.error_offset, int)
+            assert isinstance(item.error_length, int)
+            assert isinstance(item.message, str)
+            assert isinstance(item.replacements, list)
+
+    def test_empty_string_returns_empty_list(self):
+        """
+        An empty input string should return an empty list with no errors.
+        """
+        result = analysis.correct_grammar_errors("")
+        assert not result
+
+    def test_correct_speech_returns_empty_list(self):
+        """
+        A grammatically correct sentence should return no errors.
+        """
+        correct_speech = "Good morning, everyone! I am very happy to be here today."
+        result = analysis.correct_grammar_errors(correct_speech)
+        assert not result
+
+    def test_error_offsets_are_within_bounds(self):
+        """
+        Every error offset should be a valid index within the input string.
+        """
+        result = analysis.correct_grammar_errors(BASE_ERROR_SPEECH)
+        for item in result:
+            assert 0 <= item.error_offset < len(BASE_ERROR_SPEECH)
+
+    def test_error_offsets_are_non_negative(self):
+        """
+        Error offsets and lengths should never be negative.
+        """
+        result = analysis.correct_grammar_errors(BASE_ERROR_SPEECH)
+        for item in result:
+            assert item.error_offset >= 0
+            assert item.error_length >= 0
