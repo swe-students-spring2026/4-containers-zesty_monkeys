@@ -162,4 +162,5 @@ async def get_data():
     if not current_user.is_authenticated:
         raise ValueError("Not logged in")
     entries = db.users.find_one({"username": current_user.username})["entries"]
+    print(entries)
     return db.entries.find_one({"_id": entries})["entries"]
