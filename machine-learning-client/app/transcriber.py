@@ -10,7 +10,7 @@ import whisper
 
 logger = logging.getLogger(__name__)
 
-SUPPORTED_EXTENSIONS = {".wav", ".mp3", ".m4a"}
+SUPPORTED_EXTENSIONS = {".wav", ".mp3", ".m4a", ".webm"}
 
 
 def load_model(model_size: str = "base") -> whisper.Whisper:
