@@ -159,6 +159,7 @@ def add_entry(data):
     db.entries.update_one({"_id": entries}, {"$push": {"entries": data}})
 
 
+
 async def get_data():
     """
     Get all past user data
