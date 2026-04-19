@@ -4,7 +4,7 @@ body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     background: #f8fafc;
     color: #1e293b;
-    padding: 0 1rem;
+    padding: 0rem 1rem;
 }
 
 nav {
@@ -29,6 +29,8 @@ nav a:hover { color: #fff; }
     max-width: 480px;
     margin: 0 auto 2rem;
 }
+
+.auth-container { padding-top: 4rem; }
 
 h1 { font-size: 1.4rem; font-weight: 700; margin-bottom: 1.25rem; }
 h2 { font-size: 0.95rem; font-weight: 400; color: #64748b; margin-bottom: 1rem; }
