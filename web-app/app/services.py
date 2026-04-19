@@ -64,14 +64,14 @@ def transcribe_audio(file):
 #         "cleaned_text": "This is a stub transcription.",
 #         "feedback": "stub response."
 #     }
-    Returns:
-        dict: Analysis results including cleaned text and feedback
-    """
-    print(transcript)  # using this to fix linting errors for now, remove later
-    return {
-        "cleaned_text": "This is a stub transcription.",
-        "feedback": "stub response.",
-    }
+    # Returns:
+    #     dict: Analysis results including cleaned text and feedback
+    # """
+    # print(transcript)  # using this to fix linting errors for now, remove later
+    # return {
+    #     "cleaned_text": "This is a stub transcription.",
+    #     "feedback": "stub response.",
+    # }
 
 
 def get_db():

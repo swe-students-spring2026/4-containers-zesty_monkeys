@@ -8,7 +8,8 @@ The main interface between the frontend and backend services.
 
 from flask import Blueprint, request, jsonify, render_template, redirect, url_for, flash
 from flask_login import login_user, logout_user, login_required, current_user
-from .services import get_user_by_username, create_user
+from app.services import get_user_by_username, create_user, transcribe_audio
+from requests.exceptions import RequestException
 
 main = Blueprint("main", __name__)
 
