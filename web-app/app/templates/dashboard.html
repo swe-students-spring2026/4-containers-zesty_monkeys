@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+ 
+{% block title %}Dashboard{% endblock %}
+ 
+{% block nav %}
+<nav>
+    <span>Presentation Analyzer</span>
+    <a href="{{ url_for('main.logout') }}">Log out</a>
+</nav>
+{% endblock %}
+ 
+{% block content %}
+<div class="container" style="margin-top: 2rem;">
+    <h1>Welcome, {{ username }}!</h1>
+    <p style="margin-top: 1rem; color: #555;">Your recordings and analysis results will appear here.</p>
+</div>
+{% endblock %}
