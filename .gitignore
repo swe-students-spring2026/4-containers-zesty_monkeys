@@ -75,6 +75,7 @@ db.sqlite3-journal
 # Flask stuff:
 instance/
 .webassets-cache
+web-app/app/static/audio/
 
 # Scrapy stuff:
 .scrapy
