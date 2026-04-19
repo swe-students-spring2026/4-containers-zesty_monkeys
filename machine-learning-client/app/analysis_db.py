@@ -66,3 +66,5 @@ STOP_WORDS = [
     "have",
     "had",
 ]
+
+ERROR_CATEGORIES = ["grammar", "semantics", "redundancy", "collocations"]

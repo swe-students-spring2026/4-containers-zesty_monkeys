@@ -143,6 +143,8 @@ def correct_grammar_errors(speech: str):
     matches = tool.check(speech)
     grammar_errors = []
     for m in matches:
+        if m.category.lower() not in analysis_db.ERROR_CATEGORIES:
+            continue
         grammar_error = GrammarErrorInstance()
         grammar_error.error_offset = m.offset
         grammar_error.error_length = m.error_length
