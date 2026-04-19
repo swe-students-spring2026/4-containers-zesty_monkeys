@@ -8,7 +8,14 @@ import os
 import tempfile
 from flask import Flask, request, jsonify
 
-from app.transcriber import load_model, transcribe_audio
+from app.transcriber import load_model, transcribe_audio, extract_words_per_minute
+from app.analysis import (
+    count_filler_words,
+    sentence_length_rating,
+    clause_length_rating,
+    word_frequency,
+    correct_grammar_errors,
+)
 
 app = Flask(__name__)
 
@@ -36,16 +43,39 @@ def transcribe():
     try:
         result = transcribe_audio(model, temp_path)
         print("Third check")
-        return (
-            jsonify(
-                {
-                    "transcript": result["text"],
-                    "segments": result["segments"],
-                    "language": result["language"],
-                }
-            ),
-            200,
-        )
+        transcript = result["text"]
+        segments = result["segments"]
+        language = result["language"]
+
+        wpm = extract_words_per_minute(segments)
+        filler_words = count_filler_words(transcript)
+        sentence_rating = sentence_length_rating(transcript)
+        clause_rating = clause_length_rating(transcript)
+        freq = word_frequency(transcript, phrase_lengths=[2, 3])
+        grammar_errors = correct_grammar_errors(transcript)
+
+        return jsonify({
+            "transcript": transcript,
+            "segments": segments,
+            "language": language,
+            "analysis": {
+                "wpm": wpm,
+                "filler_word_count": filler_words,
+                "sentence_length_rating": sentence_rating,
+                "clause_length_rating": clause_rating,
+                "overused_words": freq["overused_words"],
+                "overused_phrases": freq["overused_phrases"],
+                "grammar_errors": [
+                    {
+                        "offset": e.error_offset,
+                        "length": e.error_length,
+                        "message": e.message,
+                        "replacements": e.replacements[:3],
+                    }
+                    for e in grammar_errors
+                ],
+            },
+        }), 200
     finally:
         if os.path.exists(temp_path):
             os.remove(temp_path)

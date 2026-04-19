@@ -27,10 +27,12 @@
 </div>
 <div id="resultCard" hidden>
     <h3>Transcript</h3>
-    <pre id="resultText"></pre>
+    <p id="resultText"></p>
+    <div id="analysisResult"></div>
 </div>
-<div class="container" style="margin-top: 2rem;">
-    <p style="margin-top: 1rem; color: #555;">Your recordings and analysis results will appear here.</p>
+<div>
+    <h2>Past Recordings</h2>
+    <div id="historyList"></div>
 </div>
 <script>
 let mediaRecorder = null;
@@ -45,6 +47,8 @@ const timerEl = document.getElementById('timer');
 const statusEl = document.getElementById('status');
 const resultCard = document.getElementById('resultCard');
 const resultText = document.getElementById('resultText');
+const audioPlayer = document.getElementById('audioPlayer');
+const analysisResult = document.getElementById('analysisResult');
 
 function formatTime(s) {
     const m = String(Math.floor(s / 60)).padStart(2, '0');
@@ -133,12 +137,16 @@ submitBtn.onclick = async () => {
         const res = await fetch('/upload', { method: 'POST', body: formData });
         const data = await res.json();
 
+        console.log("upload response:", JSON.stringify(data));
+
         if (!res.ok) {
             setStatus(data.error || 'Error');
         } else {
             resultText.textContent = data.transcript;
+            renderAnalysis(analysisResult, data.analysis);
             resultCard.hidden = false;
             setStatus('Done.');
+            setTimeout(loadHistory, 500);
         }
     } catch {
         setStatus('Server error.');
@@ -146,5 +154,87 @@ submitBtn.onclick = async () => {
         submitBtn.disabled = false;
     }
 };
+
+function rateWpm(wpm) {
+    if (wpm == null) return '—';
+    if (wpm < 30) return 'Too slow';
+    if (wpm < 50) return 'Slow';
+    if (wpm < 100) return 'Average';
+    if (wpm < 120) return 'Fast';
+    return 'Too fast';
+}
+
+function renderOverusedWords(words) {
+    if (!words || words.length === 0) return '';
+    const items = words.map(([w, c]) => `<li>${w} (${c}x)</li>`).join('');
+    return `<p><strong>Overused words:</strong></p><ul>${items}</ul>`;
+}
+
+function renderGrammarErrors(errors) {
+    if (!errors || errors.length === 0) return '<p><strong>Grammar:</strong> No issues found.</p>';
+    const items = errors.slice(0, 5).map(e =>
+        `<li>${e.message}${e.replacements.length ? ` — try: ${e.replacements.join(', ')}` : ''}</li>`
+    ).join('');
+    return `<p><strong>Grammar (${errors.length} issue${errors.length !== 1 ? 's' : ''}):</strong></p><ul>${items}</ul>`;
+}
+
+function renderAnalysis(container, analysis) {
+    if (!analysis) { container.innerHTML = ''; return; }
+    container.innerHTML = `
+        <p><strong>Words per minute:</strong> ${analysis.wpm ?? '—'} (${rateWpm(analysis.wpm)})</p>
+        <p><strong>Filler words:</strong> ${analysis.filler_word_count ?? '—'}</p>
+        <p><strong>Sentence length:</strong> ${analysis.sentence_length_rating ?? '—'}</p>
+        <p><strong>Clause length:</strong> ${analysis.clause_length_rating ?? '—'}</p>
+        ${renderOverusedWords(analysis.overused_words)}
+        ${renderGrammarErrors(analysis.grammar_errors)}
+    `;
+}
+
+async function loadHistory() {
+    const container = document.getElementById('historyList');
+
+    try {
+        const res = await fetch('/entries');
+        const entries = await res.json();
+
+        container.innerHTML = '';
+
+        if (!entries || entries.length === 0) {
+            container.innerHTML = '<p>No recordings yet.</p>';
+            return;
+        }
+
+        entries.forEach(entry => {
+            const card = document.createElement('div');
+            const date = entry.recorded_at
+                ? new Date(entry.recorded_at).toLocaleString()
+                : 'Unknown date';
+
+            const analysisDiv = document.createElement('div');
+
+            card.innerHTML = `
+                <hr>
+                <p><strong>${date}</strong> — ${entry.language ?? ''}</p>
+                ${entry.audio_path
+                    ? `<audio controls src="/audio/${entry.audio_path}"></audio>`
+                    : '<p><em>No audio available.</em></p>'}
+                <details>
+                    <summary>Transcript</summary>
+                    <p>${entry.transcript ?? ''}</p>
+                </details>
+            `;
+
+            card.appendChild(analysisDiv);
+            renderAnalysis(analysisDiv, entry.analysis);
+            container.appendChild(card);
+        });
+
+    } catch (e) {
+        console.error(e);
+        container.innerHTML = '<p>Failed to load history.</p>';
+    }
+}
+
+loadHistory();
 </script>
 {% endblock %}

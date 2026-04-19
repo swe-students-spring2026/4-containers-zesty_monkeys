@@ -6,11 +6,16 @@ Defines all HTTP API endpoints for the web application:
 The main interface between the frontend and backend services.
 """
 
-from flask import Blueprint, request, jsonify, render_template, redirect, url_for, flash
+import os
+from flask import (
+    Blueprint, request, jsonify, render_template, redirect, url_for, flash, send_from_directory
+)
 from flask_login import login_user, logout_user, login_required, current_user
 import requests
 
-from app.services import get_user_by_username, create_user, transcribe_audio
+from app.services import get_user_by_username, create_user, transcribe_audio, get_entries
+
+AUDIO_DIR = os.environ.get("AUDIO_DIR", "app/static/audio")
 
 main = Blueprint("main", __name__)
 
@@ -97,19 +102,18 @@ def upload_audio():
     if not file:
         return jsonify({"error": "No audio file provided"}), 400
     try:
-        transcript = transcribe_audio(file)
+        data = transcribe_audio(file)
     except requests.exceptions.RequestException as e:
         return jsonify({"error": "Failed to reach ML service", "details": str(e)}), 502
     print("PASS")
 
-    return (
-        jsonify(
-            {
-                "transcript": transcript,
-            }
-        ),
-        200,
-    )
+    return jsonify({
+        "transcript": data.get("transcript", ""),
+        "language": data.get("language", ""),
+        "analysis": data.get("analysis", {}),
+        "audio_path": data.get("audio_path", ""),
+        "recorded_at": data.get("recorded_at", ""),
+    }), 200
     # maybe more fields later. talk with frontend and ml-client.
 
 
@@ -143,3 +147,21 @@ def dashboard():
     Retrieves stored speech analysis records.
     """
     return render_template("dashboard.html")
+
+@main.route("/entries", methods=["GET"])
+@login_required
+def entries():
+    """
+    Returns all past recordings and analysis for the current user,
+    most recent first.
+    """
+    return jsonify(get_entries()), 200
+ 
+ 
+@main.route("/audio/<filename>")
+@login_required
+def serve_audio(filename):
+    """
+    Serve a saved audio file by filename.
+    """
+    return send_from_directory(os.path.abspath(AUDIO_DIR), filename)
