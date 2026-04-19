@@ -8,7 +8,9 @@ The main interface between the frontend and backend services.
 
 from flask import Blueprint, request, jsonify, render_template, redirect, url_for, flash
 from flask_login import login_user, logout_user, login_required, current_user
-from .services import get_user_by_username, create_user
+import requests
+
+from app.services import get_user_by_username, create_user, transcribe_audio
 
 main = Blueprint("main", __name__)
 
@@ -84,9 +86,28 @@ def register():
 @login_required
 def upload_audio():
     """
-    Handles audio file upload and returns speech analysis results.
+    Receives audio file from frontend, sends it to ML service,
+    and returns transcription result.
     """
-    return jsonify({"message": "Placeholder!!!"}), 200
+    file = request.files.get("audio")
+
+    if not file:
+        return jsonify({"error": "No audio file provided"}), 400
+
+    try:
+        transcript = transcribe_audio(file)
+    except requests.exceptions.RequestException as e:
+        return jsonify({"error": "Failed to reach ML service", "details": str(e)}), 502
+
+    return (
+        jsonify(
+            {
+                "transcript": transcript,
+            }
+        ),
+        200,
+    )
+    # maybe more fields later. talk with frontend and ml-client.
 
 
 @main.route("/", methods=["GET"])
@@ -95,4 +116,4 @@ def dashboard():
     """
     Retrieves stored speech analysis records.
     """
-    return jsonify({"message": "Placeholder!!!"}), 200
+    return render_template("dashboard.html")
