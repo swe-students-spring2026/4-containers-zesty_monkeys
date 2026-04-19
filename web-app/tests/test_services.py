@@ -49,6 +49,8 @@ def test_transcribe_success(monkeypatch):
 
     monkeypatch.setattr("builtins.open", lambda *a, **k: FakeFile())
 
+    monkeypatch.setattr("app.services.add_entry", lambda _: None)
+
     file = MockFile()
 
     result = services.transcribe_audio(file)

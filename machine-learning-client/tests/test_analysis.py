@@ -12,6 +12,7 @@ mock_db.FILLER_WORDS = ["uh", "um", "like", "basically", "you know"]
 mock_db.SENTENCE_LENGTH_THRESHOLD = [10, 20]  # Short < 10, Average < 20, Long >= 20
 mock_db.CLAUSE_LENGTH_THRESHOLD = [5, 10]  # Short < 5, Average < 10, Long >= 10
 mock_db.STOP_WORDS = {"the", "a", "an", "is", "it", "in", "on", "at", "to", "and", "of"}
+mock_db.ERROR_CATEGORIES = ["grammar", "semantics", "redundancy", "collocations"]
 sys.modules["analysis_db"] = mock_db
 
 

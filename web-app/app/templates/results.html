@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}Results — Presentation Analyzer{% endblock %}
+
+{% block nav %}
+<nav>
+    <span>Presentation Analyzer</span>
+    <a href="{{ url_for('main.logout') }}">Log out</a>
+</nav>
+{% endblock %}
+
+{% block head %}
+<script defer src="{{ url_for('static', filename='results.js') }}"></script>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>Your Results</h1>
+    <div id="transcript-card"></div>
+    <div id="filler-card"></div>
+    <div id="pace-card"></div>
+    <div id="sentence-card"></div>
+    <div id="overused-card"></div>
+    <a href="{{ url_for('main.record') }}">Record Again</a>
+    <a href="{{ url_for('main.dashboard') }}">View History</a>
+</div>
+{% endblock %}
