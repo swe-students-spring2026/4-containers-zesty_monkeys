@@ -122,6 +122,14 @@ audio { width: 100%; margin-top: 0.5rem; }
 #historyList hr { border: none; border-top: 1px solid #e2e8f0; margin: 1rem 0; }
 #historyList p { font-size: 0.875rem; color: #64748b; margin-bottom: 0.35rem; }
 
+.history-heading {
+    max-width: 480px;
+    margin: 2rem auto 0.75rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #1e293b;
+}
+
 details { margin-bottom: 0.5rem; }
 summary { font-size: 0.875rem; color: #2563eb; cursor: pointer; }
 details p { margin-top: 0.35rem; font-size: 0.875rem; color: #64748b; line-height: 1.6; }
