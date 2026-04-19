@@ -62,7 +62,7 @@ class TestValidateAudioFile:
     tests for validate_audio_file() function
     """
 
-    @pytest.mark.parametrize("ext", [".wav", ".mp3", ".m4a"])
+    @pytest.mark.parametrize("ext", [".wav", ".mp3", ".m4a", ".webm"])
     def test_valid_extensions_return_true(self, tmp_path, ext):
         """
         test that valid file extensions return true

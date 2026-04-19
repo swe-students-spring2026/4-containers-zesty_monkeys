@@ -3,8 +3,26 @@ A library for transcript analysis.
 """
 
 import re
+from dataclasses import dataclass, field
 from collections import Counter
+import language_tool_python
 from . import analysis_db
+
+
+@dataclass
+class GrammarErrorInstance:
+    """
+    A class that represents a possible grammar error.
+    error_offset is the error's first letter's index in the original text.
+    error_length is the length of the error.
+    message is the explanation and suggestion for the error.
+    replacement is a list of possible fixes for the error.
+    """
+
+    error_offset: int = 0
+    error_length: int = 0
+    message: str = ""
+    replacements: list[str] = field(default_factory=list)
 
 
 def count_filler_words(speech: str):
@@ -113,3 +131,22 @@ def word_frequency(
         "overused_words": overused_words,
         "overused_phrases": overused_phrases,
     }
+
+
+def correct_grammar_errors(speech: str):
+    """
+    Finds the possible grammar mistakes in a transcript.
+    Returns a list of GrammarErrorInstance objects,
+    which includes the error's offset, length, message and replacements
+    """
+    tool = language_tool_python.LanguageTool("en-US")
+    matches = tool.check(speech)
+    grammar_errors = []
+    for m in matches:
+        grammar_error = GrammarErrorInstance()
+        grammar_error.error_offset = m.offset
+        grammar_error.error_length = m.error_length
+        grammar_error.message = m.message
+        grammar_error.replacements = m.replacements
+        grammar_errors.append(grammar_error)
+    return grammar_errors

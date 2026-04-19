@@ -1,0 +1,54 @@
+name: Machine Learning CI
+
+on:
+  pull_request:
+    paths:
+      - "machine-learning-client/**"
+
+env:
+  PYTHON_VERSION: "3.10"
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: "pipenv"
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "21"
+
+      - name: Install dependencies
+        if: ${{ hashFiles('machine-learning-client/**/*.py') != '' }}
+        run: |
+          cd machine-learning-client
+          python -m pip install --upgrade pip
+          python -m pip install pipenv
+          pipenv run pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pipenv sync --dev --python $(which python)
+
+      - name: Lint with pylint
+        if: ${{ hashFiles('machine-learning-client/**/*.py') != '' }}
+        run: |
+          cd machine-learning-client
+          pipenv run pylint $(git ls-files '*.py')
+
+      - name: Format with black
+        if: ${{ hashFiles('machine-learning-client/**/*.py') != '' }}
+        run: |
+          cd machine-learning-client
+          pipenv run black --diff --check .
+
+      - name: Run tests
+        if: ${{ hashFiles('machine-learning-client/**/*.py') != '' }}
+        run: |
+          cd machine-learning-client
+          pipenv run python -m pytest tests/

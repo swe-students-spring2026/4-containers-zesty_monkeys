@@ -116,4 +116,4 @@ def dashboard():
     """
     Retrieves stored speech analysis records.
     """
-    return jsonify({"message": "Placeholder!!!"}), 200
+    return render_template("dashboard.html")
