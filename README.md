@@ -55,7 +55,9 @@ docker compose down
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `MONGO_URI` | MongoDB connection string | `mongodb://mongodb:27017` |
-| `MONGO_DBNAME` | MongoDB database name | `presentation_analyzer` |
+| `MONGO_DBNAME` | MongoDB database name | `data` |
+| `MLURL` | URL for ML Client | `http://machine-learning-client:5001` |
+| `AUDIO_DIR` | Directory to store audio files | `/app/app/static/audio` |
 
 ## Task boards
 [Link to our Task Board!](https://github.com/orgs/swe-students-spring2026/projects/117/views/3)
