@@ -1,0 +1,39 @@
+version: "3.9"
+
+services:
+  mongodb:
+    image: mongo:7
+    container_name: monkey-db
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    
+  machine-learning-client:
+    build:
+      context: ./machine-learning-client
+    container_name: monkey-ml-client
+    ports:
+      - "5001:5001"
+    depends_on:
+      - mongodb
+  
+  web-app:
+    build:
+      context: ./web-app
+    volumes:
+      - ./web-app:/app
+    container_name: monkey-web-app
+    ports:
+      - "5000:5000"
+    depends_on:
+      - mongodb
+      - machine-learning-client
+    environment:
+    - MONGO_URI=mongodb://mongodb:27017
+    - MONGO_DBNAME=data
+    - MLURL=http://machine-learning-client:5001
+
+  
+volumes:
+  mongo_data:

@@ -7,12 +7,12 @@ Currently uses a stub implementation.
 import os
 import requests
 from bson import ObjectId
-from flask_login import UserMixin
+from flask_login import UserMixin, current_user
 from pymongo import MongoClient
 from pymongo.errors import PyMongoError
 
 # We will replace this with the actual ML service URL once it's implemented
-ML_URL = "http://url-placeholder"
+ML_URL = os.environ.get("MLURL", "http://url-placeholder")
 
 
 def transcribe_audio(file):
@@ -27,19 +27,21 @@ def transcribe_audio(file):
     Returns:
         str: Transcribed text
     """
-    url = ML_URL  # or f"{ML_BASE_URL}/transcribe"
+    url = f"{ML_URL}/transcribe"
+    print(url)
 
     files = {"file": (file.filename, file.stream, file.mimetype)}
     # represents: (filename, (actual) file_object, content_type (like wav/mp3))
 
     try:
-        response = requests.post(url, files=files, timeout=10)
+        response = requests.post(url, files=files, timeout=300)
     except requests.exceptions.RequestException as e:
         raise requests.exceptions.RequestException(
             f"Failed to connect to ML service: {e}"
         )
 
     data = response.json()
+    add_entry(data)
 
     return data.get("transcript", "")
     # return {
@@ -96,6 +98,7 @@ class User(UserMixin):
         self.id = str(user_doc["_id"])
         self.username = user_doc["username"]
         self.password = user_doc["password"]
+        self.entries = user_doc["entries"]
 
 
 def get_user_by_id(user_id):
@@ -132,6 +135,33 @@ def create_user(username, password):
     if db.users.find_one({"username": username}):
         raise ValueError(f"Username '{username}' is already taken.")
 
-    result = db.users.insert_one({"username": username, "password": password})
+    entries = db.entries.insert_one({"entries": []})
+    result = db.users.insert_one(
+        {"username": username, "password": password, "entries": entries.inserted_id}
+    )
+    # add_entry()
     doc = db.users.find_one({"_id": result.inserted_id})
     return User(doc)
+
+
+def add_entry(data):
+    """
+    Add user entry
+    """
+    db = get_db()
+    if not current_user.is_authenticated:
+        raise ValueError("Not logged in")
+    print(current_user.username)
+    entries = db.users.find_one({"username": current_user.username})["entries"]
+    db.entries.update_one({"_id": entries}, {"$push": {"entries": data}})
+
+async def get_data():
+    """
+    Get all past user data
+    """
+    db = get_db()
+    if not current_user.is_authenticated:
+        raise ValueError("Not logged in")
+    entries = db.users.find_one({"username": current_user.username})["entries"]
+    print(entries)
+    return db.entries.find_one({"_id": entries})["entries"]

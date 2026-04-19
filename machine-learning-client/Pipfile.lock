@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "13615e792589d8c6b2166e2419341285e88ba426eac284ace8474b0c3d456961"
+            "sha256": "2dbc6c9c66a88cdea3316220832308671b3365febb427ad794beaeb479f471a9"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -167,13 +167,13 @@
             "markers": "python_version >= '3.7'",
             "version": "==3.4.7"
         },
-        "colorama": {
+        "click": {
             "hashes": [
-                "sha256:08695f5cb7ed6e0531a20572697297273c47b8cae5a63ffc6d6ed5c201be6e44",
-                "sha256:4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6"
+                "sha256:14162b8b3b3550a7d479eafa77dfd3c38d9dc8951f6f69c78913a8f9a7540fd5",
+                "sha256:1924d2c27c5653561cd2cae4548d1406039cb79b858b747cfea24924bbc1616d"
             ],
-            "markers": "python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3, 3.4, 3.5, 3.6'",
-            "version": "==0.4.6"
+            "markers": "python_version >= '3.10'",
+            "version": "==8.3.2"
         },
         "dnspython": {
             "hashes": [
@@ -190,6 +190,15 @@
             ],
             "markers": "python_version >= '3.10'",
             "version": "==3.28.0"
+        },
+        "flask": {
+            "hashes": [
+                "sha256:0ef0e52b8a9cd932855379197dd8f94047b359ca0a78695144304cb45f87c9eb",
+                "sha256:f4bcbefc124291925f1a26446da31a5178f9483862233b23c0c96a20701f670c"
+            ],
+            "index": "pypi",
+            "markers": "python_version >= '3.9'",
+            "version": "==3.1.3"
         },
         "fsspec": {
             "hashes": [

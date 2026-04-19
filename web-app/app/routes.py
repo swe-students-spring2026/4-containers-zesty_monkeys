@@ -90,14 +90,17 @@ def upload_audio():
     and returns transcription result.
     """
     file = request.files.get("audio")
+    print("UPLOAD HIT")
+    print(file.filename)
+    print(file.content_type)
 
     if not file:
         return jsonify({"error": "No audio file provided"}), 400
-
     try:
         transcript = transcribe_audio(file)
     except requests.exceptions.RequestException as e:
         return jsonify({"error": "Failed to reach ML service", "details": str(e)}), 502
+    print("PASS")
 
     return (
         jsonify(
@@ -108,6 +111,29 @@ def upload_audio():
         200,
     )
     # maybe more fields later. talk with frontend and ml-client.
+
+
+# def test_transcribe_success(monkeypatch, flask_client):
+
+#     Test /transcribe endpoint returns expected JSON response.
+
+
+#     def mock_transcribe(_, __):  # model and path args are ignored whatever.
+#         return {"text": "hello world", "segments": [], "language": "en"}
+
+#     monkeypatch.setattr("app.server.transcribe_audio", mock_transcribe)
+
+#     data = {"file": (io.BytesIO(b"fake audio"), "test.wav")}
+
+#     response = flask_client.post(
+#         "/transcribe", data=data, content_type="multipart/form-data"
+#     )
+
+#     assert response.status_code == 200
+#     json_data = response.get_json()
+
+#     assert json_data["transcript"] == "hello world"
+#     assert json_data["language"] == "en"
 
 
 @main.route("/", methods=["GET"])
