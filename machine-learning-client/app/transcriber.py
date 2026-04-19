@@ -62,6 +62,7 @@ def transcribe_audio(
     invalid.
     """
     validate_audio_file(audio_path)
+    print("first check")
 
     logger.info("Transcribing: %s", audio_path)
     result = model.transcribe(
@@ -70,6 +71,7 @@ def transcribe_audio(
         condition_on_previous_text=True,
         initial_prompt=initial_prompt,
     )
+    print("HERE HERE")
 
     return {
         "text": result.get("text", "").strip(),

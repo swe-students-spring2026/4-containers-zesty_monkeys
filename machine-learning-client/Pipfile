@@ -9,6 +9,7 @@ pymongo = "*"
 python-dotenv = "*"
 flask = "*"
 language-tool-python = "*"
+flask = "*"
 
 [dev-packages]
 black = "*"

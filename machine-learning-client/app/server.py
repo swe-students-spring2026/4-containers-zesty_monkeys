@@ -31,9 +31,11 @@ def transcribe():
     with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
         file.save(tmp.name)
         temp_path = tmp.name
+    print("this far")
 
     try:
         result = transcribe_audio(model, temp_path)
+        print("Third check")
         return (
             jsonify(
                 {
