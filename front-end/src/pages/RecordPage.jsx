@@ -45,9 +45,11 @@ export default function RecordPage() {
 
         // mock data, to be replaced
         const data = {
-            transcript: "Hi, um, this is zesty monkeys, and we're doing a web app, that's like, uhh, Uber but for dogs or something.",
-            filler_word_count: 5,
-            // add other tracked data
+            transcript: "Hi, um, this is zesty monkeys, and we're doing a web app, that's like, um, Uber but for dogs or something.",
+            filler_word_count: 4,
+            speech_speed: "Average",
+            sentence_length: "Long",
+            overused_words: [["um", 2], ["like", 1], ["or something", 1]]
         }
 
         setLoading(false)
