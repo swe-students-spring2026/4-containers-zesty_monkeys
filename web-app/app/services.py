@@ -44,13 +44,13 @@ def transcribe_audio(file):
         raise requests.exceptions.RequestException(
             f"Failed to connect to ML service: {e}"
         )
- 
+
     data = response.json()
     data["audio_path"] = filename
     data["recorded_at"] = datetime.now(timezone.utc).isoformat()
- 
+
     add_entry(data)
- 
+
     return data
 
 
@@ -158,6 +158,7 @@ def add_entry(data):
     entries = db.users.find_one({"username": current_user.username})["entries"]
     db.entries.update_one({"_id": entries}, {"$push": {"entries": data}})
 
+
 async def get_data():
     """
     Get all past user data
@@ -168,6 +169,7 @@ async def get_data():
     entries = db.users.find_one({"username": current_user.username})["entries"]
     print(entries)
     return db.entries.find_one({"_id": entries})["entries"]
+
 
 def get_entries():
     """

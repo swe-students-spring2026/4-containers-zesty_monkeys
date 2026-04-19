@@ -54,28 +54,33 @@ def transcribe():
         freq = word_frequency(transcript, phrase_lengths=[2, 3])
         grammar_errors = correct_grammar_errors(transcript)
 
-        return jsonify({
-            "transcript": transcript,
-            "segments": segments,
-            "language": language,
-            "analysis": {
-                "wpm": wpm,
-                "filler_word_count": filler_words,
-                "sentence_length_rating": sentence_rating,
-                "clause_length_rating": clause_rating,
-                "overused_words": freq["overused_words"],
-                "overused_phrases": freq["overused_phrases"],
-                "grammar_errors": [
-                    {
-                        "offset": e.error_offset,
-                        "length": e.error_length,
-                        "message": e.message,
-                        "replacements": e.replacements[:3],
-                    }
-                    for e in grammar_errors
-                ],
-            },
-        }), 200
+        return (
+            jsonify(
+                {
+                    "transcript": transcript,
+                    "segments": segments,
+                    "language": language,
+                    "analysis": {
+                        "wpm": wpm,
+                        "filler_word_count": filler_words,
+                        "sentence_length_rating": sentence_rating,
+                        "clause_length_rating": clause_rating,
+                        "overused_words": freq["overused_words"],
+                        "overused_phrases": freq["overused_phrases"],
+                        "grammar_errors": [
+                            {
+                                "offset": e.error_offset,
+                                "length": e.error_length,
+                                "message": e.message,
+                                "replacements": e.replacements[:3],
+                            }
+                            for e in grammar_errors
+                        ],
+                    },
+                }
+            ),
+            200,
+        )
     finally:
         if os.path.exists(temp_path):
             os.remove(temp_path)
