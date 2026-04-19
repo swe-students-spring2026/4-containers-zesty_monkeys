@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}Record — Presentation Analyzer{% endblock %}
+
+{% block nav %}
+<nav>
+    <span>Presentation Analyzer</span>
+    <a href="{{ url_for('main.logout') }}">Log out</a>
+</nav>
+{% endblock %}
+
+{% block head %}
+<script defer src="{{ url_for('static', filename='record.js') }}"></script>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>Analyze Your Speech</h1>
+    <button id="record-btn">Start Recording</button>
+    <p>— or —</p>
+    <input type="file" id="file-input" accept="audio/*">
+    <p id="audio-status"></p>
+    <button id="submit-btn" disabled>Analyze</button>
+    <p id="error-msg"></p>
+</div>
+{% endblock %}
