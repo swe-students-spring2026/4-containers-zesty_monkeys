@@ -134,20 +134,23 @@ def create_user(username, password):
     db = get_db()
     if db.users.find_one({"username": username}):
         raise ValueError(f"Username '{username}' is already taken.")
-    
+
     entries = db.entries.insert_one({"entries": []})
-    result = db.users.insert_one({"username": username, "password": password, "entries": entries.inserted_id})
-    #add_entry()
+    result = db.users.insert_one(
+        {"username": username, "password": password, "entries": entries.inserted_id}
+    )
+    # add_entry()
     doc = db.users.find_one({"_id": result.inserted_id})
     return User(doc)
 
+
 def add_entry(data):
+    """
+    Add user entry
+    """
     db = get_db()
     if not current_user.is_authenticated:
         raise ValueError("Not logged in")
     print(current_user.username)
     entries = db.users.find_one({"username": current_user.username})["entries"]
-    result = db.entries.update_one(
-        { "_id": entries },
-        { "$push": { "entries": data } }
-    );
+    db.entries.update_one({"_id": entries}, {"$push": {"entries": data}})
