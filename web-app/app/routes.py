@@ -12,6 +12,7 @@ from .services import get_user_by_username, create_user
 
 main = Blueprint("main", __name__)
 
+
 @main.route("/login", methods=["GET", "POST"])
 def login():
     """
@@ -37,6 +38,7 @@ def login():
 
     return render_template("login.html")
 
+
 @main.route("/logout")
 @login_required
 def logout():
@@ -47,6 +49,7 @@ def logout():
     logout_user()
     flash("You have been logged out.", "info")
     return redirect(url_for("main.login"))
+
 
 @main.route("/register", methods=["GET", "POST"])
 def register():
@@ -76,6 +79,7 @@ def register():
 
     return render_template("register.html")
 
+
 @main.route("/upload", methods=["POST"])
 @login_required
 def upload_audio():
@@ -83,6 +87,7 @@ def upload_audio():
     Handles audio file upload and returns speech analysis results.
     """
     return jsonify({"message": "Placeholder!!!"}), 200
+
 
 @main.route("/", methods=["GET"])
 @login_required

@@ -9,6 +9,7 @@ from .services import get_user_by_id
 
 login_manager = LoginManager()
 
+
 def create_app(config=None):
     """
     Creates and configures the Flask application.

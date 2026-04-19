@@ -3,18 +3,21 @@ Handles communication with the speech-to-text, text analysis, and LLM services.
 
 Currently uses a stub implementation.
 """
+
 import os
 import requests
 from bson import ObjectId
 from flask_login import UserMixin
 from pymongo import MongoClient
+from pymongo.errors import PyMongoError
 
 # We will replace this with the actual ML service URL once it's implemented
 ML_URL = "http://url-placeholder"
 
+
 def transcribe_audio(file):
     """
-    Sends raw audio file as a request to ML client, 
+    Sends raw audio file as a request to ML client,
     and retrieves the transcribed text.
 
     Args:
@@ -24,17 +27,17 @@ def transcribe_audio(file):
     Returns:
         str: Transcribed text
     """
-    url = ML_URL # or f"{ML_BASE_URL}/transcribe"
+    url = ML_URL  # or f"{ML_BASE_URL}/transcribe"
 
-    files = {
-        "file": (file.filename, file.stream, file.mimetype)
-    }
+    files = {"file": (file.filename, file.stream, file.mimetype)}
     # represents: (filename, (actual) file_object, content_type (like wav/mp3))
 
     try:
         response = requests.post(url, files=files, timeout=10)
     except requests.exceptions.RequestException as e:
-        raise requests.exceptions.RequestException("Failed to connect to ML service:", e)
+        raise requests.exceptions.RequestException(
+            "Failed to connect to ML service:", e
+        )
 
     data = response.json()
 
@@ -44,6 +47,7 @@ def transcribe_audio(file):
     #     "segments": data.get("segments"),
     #     "language": data.get("language"),
     # }
+
 
 def analyze_text(transcript):
     """
@@ -56,34 +60,36 @@ def analyze_text(transcript):
     Returns:
         dict: Analysis results including cleaned text and feedback
     """
+    print(transcript)  # using this to fix linting errors for now, remove later
     return {
         "cleaned_text": "This is a stub transcription.",
-        "feedback": "stub response."
+        "feedback": "stub response.",
     }
 
-_client = None
-_db = None
 
 def get_db():
     """
     Return the MongoDB instance and create connection.
     """
-    global _client, _db
-    if _db is None:
+    if not hasattr(get_db, "db"):
         uri = os.environ.get("MONGO_URI", "mongodb://localhost:27017")
-        dbname = os.environ.get("MONGO_DBNAME", "presentation_analyzer") # change db name later when natt gets back to me
-        _client = MongoClient(uri)
-        _db = _client[dbname]
-    return _db
+        dbname = os.environ.get("MONGO_DBNAME", "presentation_analyzer")
+        # change db name later when natt gets back to me
+        client = MongoClient(uri)
+        get_db.db = client[dbname]
+    return get_db.db
+
 
 class User(UserMixin):
     """
     User model
     """
+
     def __init__(self, user_doc):
         self.id = str(user_doc["_id"])
         self.username = user_doc["username"]
         self.password = user_doc["password"]
+
 
 def get_user_by_id(user_id):
     """
@@ -93,9 +99,10 @@ def get_user_by_id(user_id):
         db = get_db()
         doc = db.users.find_one({"_id": ObjectId(user_id)})
         return User(doc) if doc else None
-    except Exception as exc:
+    except PyMongoError as exc:
         print("Error loading user %s: %s", user_id, exc)
         return None
+
 
 def get_user_by_username(username):
     """
@@ -105,9 +112,10 @@ def get_user_by_username(username):
         db = get_db()
         doc = db.users.find_one({"username": username})
         return User(doc) if doc else None
-    except Exception as exc:
+    except PyMongoError as exc:
         print("Error looking up username %s: %s", username, exc)
         return None
+
 
 def create_user(username, password):
     """
