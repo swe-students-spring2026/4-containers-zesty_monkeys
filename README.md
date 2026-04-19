@@ -34,7 +34,6 @@ cp .env.example .env
 Edit `.env` with your actual values.
 
 #### Start all containers
-### Start all containers
 
 Build and start the application.
 
