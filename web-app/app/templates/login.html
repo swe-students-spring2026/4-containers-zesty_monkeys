@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+ 
+{% block title %}Log In — Presentation Analyzer{% endblock %}
+ 
+{% block content %}
+<div class="container">
+    <h1>Log In</h1>
+ 
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+            <div class="flash {{ category }}">{{ message }}</div>
+        {% endfor %}
+    {% endwith %}
+ 
+    <form method="POST">
+        <label for="username">Username</label>
+        <input type="text" id="username" name="username" required autofocus>
+ 
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" required>
+ 
+        <button type="submit">Log In</button>
+    </form>
+ 
+    <a class="link" href="{{ url_for('main.register') }}">Don't have an account? Register</a>
+</div>
+{% endblock %}
