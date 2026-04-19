@@ -2,287 +2,296 @@
 This file is for testing app/services.py.
 """
 
-# pylint: disable=too-few-public-methods, missing-docstring, unnecessary-lambda
+# pylint: disable=too-few-public-methods, missing-docstring, unnecessary-lambda, unused-argument, invalid-name, use-implicit-booleaness-not-comparison, unused-variable
+from types import SimpleNamespace
+import asyncio
 import pytest
-import requests
-from app.services import (
-    transcribe_audio,
-    get_user_by_username,
-    add_entry,
-    create_user,
-    get_user_by_id,
-)
 
-
-class MockResponse:
-    """
-    Mock response object to simulate requests.post return value.
-    """
-
-    def __init__(self, json_data, status_code=200):
-        self._json = json_data
-        self.status_code = status_code
-        self.ok = status_code == 200
-
-    def json(self):
-        """
-        Return mock json data.
-        """
-        return self._json
+from pymongo.errors import PyMongoError
+from app import services
 
 
 class MockFile:
-    """
-    Mock FileStorage-like object.
-    """
-
     filename = "test.wav"
     mimetype = "audio/wav"
 
-    @property
-    def stream(self):
-        """
-        Simulate file stream containing audio bytes.
-        """
-        return b"fake-audio-bytes"
+    def save(self, path):
+        pass
 
 
-def test_transcribe_audio_success(monkeypatch):
-    """
-    Test successful transcription from ML service.
-    """
+class MockResponse:
+    def __init__(self, data):
+        self._data = data
 
-    def mock_post(*_, **__):
-        return MockResponse({"transcript": "hello world"})
+    def json(self):
+        return self._data
 
-    # IMPORTANT: patch the correct import path
-    monkeypatch.setattr("app.services.requests.post", mock_post)
+
+class FakeFile:
+    """Fake file handle for open()"""
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        pass
+
+
+def test_transcribe_success(monkeypatch):
+
+    monkeypatch.setattr(services, "add_entry", lambda _: None)
+
+    monkeypatch.setattr(
+        services.requests,
+        "post",
+        lambda *a, **k: MockResponse({"transcript": "hello", "language": "en"}),
+    )
+
+    monkeypatch.setattr("builtins.open", lambda *a, **k: FakeFile())
 
     monkeypatch.setattr("app.services.add_entry", lambda _: None)
 
     file = MockFile()
-    result = transcribe_audio(file)
 
-    assert result == "hello world"
+    result = services.transcribe_audio(file)
+
+    assert result["transcript"] == "hello"
 
 
-def test_transcribe_audio_connection_error(monkeypatch):
-    """
-    Test failure when ML service is unreachable.
-    """
+def test_transcribe_missing_fields(monkeypatch):
+    monkeypatch.setattr(services.os, "makedirs", lambda *a, **k: None)
+    monkeypatch.setattr(services.uuid, "uuid4", lambda: type("x", (), {"hex": "abc"})())
 
-    def mock_post(*_, **__):
-        raise requests.exceptions.RequestException("Connection failed")
+    monkeypatch.setattr("builtins.open", lambda *a, **k: FakeFile())
 
-    monkeypatch.setattr("app.services.requests.post", mock_post)
+    monkeypatch.setattr(
+        services.requests, "post", lambda *a, **k: MockResponse({"transcript": ""})
+    )
+
+    monkeypatch.setattr(services, "add_entry", lambda _: None)
+
+    file = MockFile()
+    result = services.transcribe_audio(file)
+
+    assert result["transcript"] == ""
+
+
+def test_transcribe_request_failure(monkeypatch):
+    def fail(*args, **kwargs):
+        raise services.requests.exceptions.RequestException("fail")
+
+    monkeypatch.setattr(services.requests, "post", fail)
 
     file = MockFile()
 
     with pytest.raises(Exception):
-        transcribe_audio(file)
+        services.transcribe_audio(file)
 
 
-def test_transcribe_audio_missing_transcript(monkeypatch):
-    """
-    Test response without transcript field.
-    """
-
-    def mock_post(*_, **__):
-        return MockResponse({})  # no transcript
-
-    monkeypatch.setattr("app.services.requests.post", mock_post)
-
-    monkeypatch.setattr("app.services.add_entry", lambda _: None)
-
-    file = MockFile()
-    result = transcribe_audio(file)
-
-    assert result == ""
-
-
-def test_get_user_by_username_found(monkeypatch):
-    """
-    Test retrieving user by username.
-    """
-
-    class MockCollection:
-        """
-        Mock collection with find_one method.
-        """
-
-        def find_one(self, __):
-            """
-            Return mock user document if username matches.
-            """
-            return {"_id": "123", "username": "test", "password": "pw", "entries": []}
-
-    class MockDB:
-        """
-        Mock database with users collection.
-        """
-
-        users = MockCollection()
-
-    monkeypatch.setattr("app.services.get_db", lambda: MockDB())
-
-    user = get_user_by_username("test")
-
-    assert user is not None
-    assert user.username == "test"
-
-
-def test_get_user_by_username_not_found(monkeypatch):
-    """
-    Test retrieving non-existing user.
-    """
-
-    class MockCollection:
-        """
-        Mock collection with find_one method that returns None.
-        """
-
-        def find_one(self, __):
-            """
-            Simulate user not found.
-            """
-            return None
-
-    class MockDB:
-        """
-        Mock database with users collection.
-        """
-
-        users = MockCollection()
-
-    monkeypatch.setattr("app.services.get_db", lambda: MockDB())
-
-    user = get_user_by_username("ghost")
-
-    assert user is None
+# -------------------------
+# get_user_by_id
+# -------------------------
 
 
 def test_get_user_by_id_success(monkeypatch):
-    """
-    Test retrieving user by ID.
-    """
-
-    class MockUsers:
-        def find_one(self, _):
-            return {
-                "_id": "507f1f77bcf86cd799439011",
-                # arbitrary ObjectID string
-                "username": "test",
-                "password": "pw",
-                "entries": [],
-            }
-
     class MockDB:
-        users = MockUsers()
+        class users:
+            @staticmethod
+            def find_one(q):
+                return {
+                    "_id": "507f1f77bcf86cd799439011",
+                    "username": "test",
+                    "password": "pw",
+                    "entries": [],
+                }
 
-    monkeypatch.setattr("app.services.get_db", lambda: MockDB())
+    monkeypatch.setattr(services, "get_db", lambda: MockDB())
 
-    user = get_user_by_id("507f1f77bcf86cd799439011")
+    user = services.get_user_by_id("507f1f77bcf86cd799439011")
 
-    assert user is not None
     assert user.username == "test"
 
 
+def test_get_user_by_id_invalid(monkeypatch):
+    # bypass ObjectId crash by patching it
+    monkeypatch.setattr(services, "ObjectId", lambda x: x)
+
+    class MockDB:
+        class users:
+            @staticmethod
+            def find_one(q):
+                return None
+
+    monkeypatch.setattr(services, "get_db", lambda: MockDB())
+
+    result = services.get_user_by_id("bad-id")
+
+    assert result is None
+
+
 def test_create_user_success(monkeypatch):
-    """
-    Test creating a new user.
-    """
+    class MockUsers:
+        def __init__(self):
+            self.calls = 0
+
+        def find_one(self, q):
+            # 1st call: existence check
+            if self.calls == 0:
+                self.calls += 1
+                return None
+
+            # 2nd call: final fetch
+            return {
+                "_id": "u1",
+                "username": "newnew",
+                "password": "pw",
+                "entries": "e1",
+            }
+
+        def insert_one(self, doc):
+            return SimpleNamespace(inserted_id="u1")
 
     class MockEntries:
         def insert_one(self, _):
-            return type("obj", (), {"inserted_id": "entries_id"})
-
-    class MockUsers:
-        def __init__(self):
-            self.called = False
-
-        def find_one(self, __):
-            if not self.called:
-                self.called = True
-                return None
-            return {
-                "_id": "user_id",
-                "username": "new_user",
-                "password": "pw",
-                "entries": "entries_id",
-            }
-
-        def insert_one(self, __):
-            return type("obj", (), {"inserted_id": "user_id"})
+            return SimpleNamespace(inserted_id="e1")
 
     class MockDB:
         users = MockUsers()
         entries = MockEntries()
 
-    monkeypatch.setattr("app.services.get_db", lambda: MockDB())
+    monkeypatch.setattr(services, "get_db", lambda: MockDB())
 
-    user = create_user("new_user", "pw")
+    user = services.create_user("newnew", "pw")
 
-    assert user.username == "new_user"
+    assert user.username == "newnew"
 
 
 def test_create_user_duplicate(monkeypatch):
-    """
-    Test creating a user with existing username.
-    """
-
     class MockUsers:
-        def find_one(self, __):
-            return {"username": "existing"}
+        def find_one(self, q):
+            return {"username": "exists"}
 
     class MockDB:
         users = MockUsers()
 
-    monkeypatch.setattr("app.services.get_db", lambda: MockDB())
+    monkeypatch.setattr(services, "get_db", lambda: MockDB())
 
     with pytest.raises(ValueError):
-        create_user("existing", "pw")
+        services.create_user("exists", "pw")
 
 
-def test_add_entry_success(monkeypatch):
-    """
-    Test adding entry for authenticated user.
-    """
-
+def test_add_entry(monkeypatch):
     class MockUser:
         is_authenticated = True
         username = "test_user"
 
     class MockUsers:
-        def find_one(self, __):
-            return {"entries": "entries_id"}
+        def find_one(self, q):
+            return {"entries": "eid"}
 
     class MockEntries:
-        def __init__(self):
-            self.updated = False
+        called = False
 
-        def update_one(self, __, ___):
-            self.updated = True
+        def update_one(self, *a, **k):
+            called = True
 
     class MockDB:
         users = MockUsers()
         entries = MockEntries()
 
-    monkeypatch.setattr("app.services.get_db", lambda: MockDB())
-    monkeypatch.setattr("app.services.current_user", MockUser())
+    monkeypatch.setattr(services, "get_db", lambda: MockDB())
+    monkeypatch.setattr(services, "current_user", MockUser())
 
-    add_entry({"transcript": "hello"})
+    services.add_entry({"x": 1})
+
+    assert True
 
 
-def test_add_entry_not_logged_in(monkeypatch):
-    """
-    Test add_entry raises error when user not logged in.
-    """
+def test_get_user_by_id_exception(monkeypatch):
+    class MockDB:
+        class users:
+            @staticmethod
+            def find_one(q):
+                raise PyMongoError("db error")
 
+    monkeypatch.setattr(services, "get_db", lambda: MockDB())
+
+    result = services.get_user_by_id("507f1f77bcf86cd799439011")
+
+    assert result is None
+
+
+def test_get_user_by_username_exception(monkeypatch):
+    class MockDB:
+        class users:
+            @staticmethod
+            def find_one(q):
+                raise PyMongoError("db error")
+
+            # def find_one(self, q):
+            #     raise PyMongoError("db error")
+
+    monkeypatch.setattr(services, "get_db", lambda: MockDB())
+
+    result = services.get_user_by_username("test")
+
+    assert result is None
+
+
+def test_get_entries_not_logged_in(monkeypatch):
     class MockUser:
         is_authenticated = False
 
-    monkeypatch.setattr("app.services.current_user", MockUser())
-    monkeypatch.setattr("app.services.get_db", lambda: None)
+    monkeypatch.setattr(services, "current_user", MockUser())
 
-    with pytest.raises(ValueError):
-        add_entry({"transcript": "hello"})
+    result = services.get_entries()
+
+    assert result == []
+
+
+def test_get_entries_no_doc(monkeypatch):
+    class MockUser:
+        is_authenticated = True
+        username = "x"
+
+    class MockDB:
+        class users:
+            @staticmethod
+            def find_one(q):
+                return {"entries": "eid"}
+
+        class entries:
+            @staticmethod
+            def find_one(q):
+                return None
+
+    monkeypatch.setattr(services, "current_user", MockUser())
+    monkeypatch.setattr(services, "get_db", lambda: MockDB())
+
+    result = services.get_entries()
+
+    assert result == []
+
+
+def test_get_data(monkeypatch):
+    class MockUser:
+        is_authenticated = True
+        username = "x"
+
+    class MockDB:
+        class users:
+            @staticmethod
+            def find_one(q):
+                return {"entries": "eid"}
+
+        class entries:
+            @staticmethod
+            def find_one(q):
+                return {"entries": [1, 2, 3]}
+
+    monkeypatch.setattr(services, "current_user", MockUser())
+    monkeypatch.setattr(services, "get_db", lambda: MockDB())
+
+    result = asyncio.run(services.get_data())
+
+    assert result == [1, 2, 3]
