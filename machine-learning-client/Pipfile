@@ -8,7 +8,6 @@ openai-whisper = "*"
 pymongo = "*"
 python-dotenv = "*"
 language-tool-python = "*"
-flask = "*"
 
 [dev-packages]
 black = "*"
