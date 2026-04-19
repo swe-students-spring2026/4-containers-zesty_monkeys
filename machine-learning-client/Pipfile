@@ -8,7 +8,7 @@ openai-whisper = "*"
 pymongo = "*"
 python-dotenv = "*"
 language-tool-python = "*"
-flask = "*"
+flask = {extras = ["async"], version = "*"}
 
 [dev-packages]
 black = "*"

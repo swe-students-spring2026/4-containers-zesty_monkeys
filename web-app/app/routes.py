@@ -10,7 +10,7 @@ from flask import Blueprint, request, jsonify, render_template, redirect, url_fo
 from flask_login import login_user, logout_user, login_required, current_user
 import requests
 
-from app.services import get_user_by_username, create_user, transcribe_audio
+from app.services import get_user_by_username, create_user, transcribe_audio, get_data
 
 main = Blueprint("main", __name__)
 
@@ -138,8 +138,10 @@ def upload_audio():
 
 @main.route("/", methods=["GET"])
 @login_required
-def dashboard():
+async def dashboard():
     """
     Retrieves stored speech analysis records.
     """
-    return render_template("dashboard.html")
+    info = await get_data()
+    print(info)
+    return render_template("dashboard.html", data=info)

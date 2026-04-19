@@ -151,6 +151,15 @@ def add_entry(data):
     db = get_db()
     if not current_user.is_authenticated:
         raise ValueError("Not logged in")
-    print(current_user.username)
     entries = db.users.find_one({"username": current_user.username})["entries"]
     db.entries.update_one({"_id": entries}, {"$push": {"entries": data}})
+
+async def get_data():
+    """
+    Get all past user data
+    """
+    db = get_db()
+    if not current_user.is_authenticated:
+        raise ValueError("Not logged in")
+    entries = db.users.find_one({"username": current_user.username})["entries"]
+    return db.entries.find_one({"_id": entries})["entries"]

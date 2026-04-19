@@ -6,9 +6,9 @@ name = "pypi"
 [packages]
 pymongo = "*"
 requests = "*"
-flask = "*"
 flask-login = "*"
 python-dotenv = "*"
+flask = {extras = ["async"], version = "*"}
 
 [dev-packages]
 pytest = "*"
