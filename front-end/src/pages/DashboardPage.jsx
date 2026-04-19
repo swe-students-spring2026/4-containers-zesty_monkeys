@@ -16,6 +16,15 @@ export default function DashboardPage() {
                 filler_word_count: 3,
                 sentence_length: "Long",
                 overused_words: [["um", 2], ["like", 1]]
+            },
+
+            { 
+                id: 2, 
+                transcript: "We are, um, two white colored foreigners, um, riding motorcyles together, like, to cross China.",
+                speech_speed: "Fast",
+                filler_word_count: 3,
+                sentence_length: "Long",
+                overused_words: [["um", 2], ["like", 1]]
             }
         ])
         setLoading(false)
