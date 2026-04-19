@@ -23,6 +23,7 @@ services:
       context: ./web-app
     volumes:
       - ./web-app:/app
+      - audio_files:/app/app/static/audio
     container_name: monkey-web-app
     ports:
       - "5000:5000"
@@ -33,7 +34,9 @@ services:
     - MONGO_URI=mongodb://mongodb:27017
     - MONGO_DBNAME=data
     - MLURL=http://machine-learning-client:5001
+    - AUDIO_DIR=/app/app/static/audio
 
   
 volumes:
   mongo_data:
+  audio_files:
